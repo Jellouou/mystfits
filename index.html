@@ -950,6 +950,11 @@
 .nav-links a.nav-tab-active::after {
   width: 100% !important;
 }
+
+/* Force apply modal visible even in tab-mode */
+#applyModal[style*="flex"] {
+  display: flex !important;
+}
 </style>
 </head>
 <body>
@@ -958,7 +963,7 @@
 <canvas id="particles"></canvas>
 
 <!-- APPLY MODAL -->
-<div id="applyModal" onclick="if(event.target===this)closeApplyModal()" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(7,6,13,0.92);align-items:center;justify-content:center;padding:20px;">
+<div id="applyModal" onclick="if(event.target===this)closeApplyModal()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(7,6,13,0.92);align-items:center;justify-content:center;padding:20px;">
   <div id="applyModalInner" style="background:var(--deep);border:1px solid rgba(110,63,243,0.35);width:100%;max-width:660px;max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 24px 80px rgba(0,0,0,0.8);">
     <!-- Top bar -->
     <div style="position:sticky;top:0;z-index:5;background:var(--deep);border-bottom:1px solid rgba(110,63,243,0.15);padding:18px 24px 0;">
@@ -2185,7 +2190,7 @@
   }
 
   // Mobile menu toggle with animated burger
-  let menuOpen = false;
+  var menuOpen = false;
   function toggleMenu() {
     menuOpen = !menuOpen;
     const menu = document.getElementById('mobileMenu');
@@ -2230,13 +2235,13 @@
 
   // ─── FIREBASE AUTH SYSTEM ────────────────────────────────────────────────────
 
-  const OWNER_EMAIL    = 'hikarikaizen2@gmail.com';
-  const RESERVED_NAMES = ['jellou', 'jellou yukimura', 'owner', 'admin'];
-  const EJS_PUBKEY     = 'l9AUq5095rRQdQNHz';
-  const EJS_SERVICE    = 'service_nz57wiq';
-  const EJS_VERIFY_TPL = 'template_7syiysk';
+  var OWNER_EMAIL    = 'hikarikaizen2@gmail.com';
+  var RESERVED_NAMES = ['jellou', 'jellou yukimura', 'owner', 'admin'];
+  var EJS_PUBKEY     = 'l9AUq5095rRQdQNHz';
+  var EJS_SERVICE    = 'service_nz57wiq';
+  var EJS_VERIFY_TPL = 'template_7syiysk';
 
-  const APPLY_QUESTIONS = {
+  var APPLY_QUESTIONS = {
     moderator: {
       sections: [
         { title: 'Background', questions: [
@@ -2364,8 +2369,8 @@
     },
   };
 
-  const EJS_RESET_TPL  = 'template_7mf1x3j';
-  const FB_KEY         = 'mystfit_firebase_url';
+  var EJS_RESET_TPL  = 'template_7mf1x3j';
+  var FB_KEY         = 'mystfit_firebase_url';
 
   // ── Rate limiting constants ───────────────────────────────────────────────────
   const RL_SIGNUP_KEY    = 'mystfit_rl_signups';    // tracks signup timestamps
@@ -2378,11 +2383,11 @@
   const RESEND_COOLDOWN  = 60 * 1000;              // 60s between resends
   const MAX_CODE_ATTEMPTS = 5;                      // wrong code lockout
 
-  let firebaseUrl  = localStorage.getItem(FB_KEY) || 'https://mystfit-e2fe4-default-rtdb.asia-southeast1.firebasedatabase.app';
-  let chatPolling  = null;
-  let lockedName   = null;   // display name from Firebase Auth profile
-  let currentUID   = null;   // Firebase Auth UID
-  let currentUser  = null;   // Firebase Auth user object
+  var firebaseUrl  = localStorage.getItem(FB_KEY) || 'https://mystfit-e2fe4-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var chatPolling  = null;
+  var lockedName   = null;   // display name from Firebase Auth profile
+  var currentUID   = null;   // Firebase Auth UID
+  var currentUser  = null;   // Firebase Auth user object
   let authModalCallback = null; // function to call after login
 
   // Firebase Auth config — same project as Realtime DB
@@ -2398,11 +2403,20 @@
   };
 
   // Initialize Firebase if not already done
-  if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-  const auth = firebase.auth();
+  var auth = null;
+  try {
+    if (typeof firebase !== 'undefined') {
+      if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+      auth = firebase.auth();
+      auth.onAuthStateChanged(function(user) {
+        if (user && user.emailVerified) { onUserLoggedIn(user); }
+        else { onUserLoggedOut(); }
+      });
+    }
+  } catch(e) { console.warn('Firebase init failed:', e.message); }
 
   // Initialize EmailJS
-  emailjs.init(EJS_PUBKEY);
+  try { if (typeof emailjs !== 'undefined') emailjs.init(EJS_PUBKEY); } catch(e) {}
 
   // ── Auth modal controls ───────────────────────────────────────────────────────
   function openAuthModal(cb) {
@@ -2837,8 +2851,8 @@
   }
 
   // ── Auth state listener — runs on every page load and auth change ─────────────
-  let justSignedIn = false; // true only when user actively just signed in
-  auth.onAuthStateChanged(async (user) => {
+  var justSignedIn = false; // true only when user actively just signed in
+  if (auth) auth.onAuthStateChanged(async (user) => {
     currentUser = user;
     const isOwner = user && user.email === OWNER_EMAIL;
     if (user) {
@@ -3332,14 +3346,14 @@
   // Replace the placeholder URLs with your actual Google Form links
   // ─── BUILT-IN STAFF APPLICATION FORMS ───────────────────────────────────────
 
-  const ROLE_META = {
+  var ROLE_META = {
     moderator: { label: '🛡️ Moderator Application', color: 'var(--myst)',  border: 'rgba(110,63,243,0.5)',  textColor: '#fff' },
     admin:     { label: '👑 Admin Application',     color: 'var(--gold)',  border: 'rgba(240,192,64,0.6)',  textColor: 'var(--void)' },
     streamer:  { label: '🎥 Streamer Application',  color: 'var(--ember)', border: 'rgba(255,107,43,0.6)',  textColor: '#fff' },
     developer: { label: '⚙️ Developer Application', color: '#4ade80',      border: 'rgba(74,222,128,0.6)',  textColor: 'var(--void)' },
   };
 
-  let currentApplyRole = 'moderator';
+  var currentApplyRole = 'moderator';
 
   function openApplyModal(role) {
     role = role || 'moderator';
@@ -4131,7 +4145,53 @@ function _renderAdminSuggestions(data) {
 var _currentTab = null;
 
 
-// loadQAPending is defined in the main script block above
+
+// ── Expose functions to global scope for onclick handlers ──
+if (typeof copyIP !== 'undefined') window.copyIP = copyIP;
+if (typeof toggleMenu !== 'undefined') window.toggleMenu = toggleMenu;
+if (typeof openAuthModal !== 'undefined') window.openAuthModal = openAuthModal;
+if (typeof closeAuthModal !== 'undefined') window.closeAuthModal = closeAuthModal;
+if (typeof switchAuthTab !== 'undefined') window.switchAuthTab = switchAuthTab;
+if (typeof doLogin !== 'undefined') window.doLogin = doLogin;
+if (typeof doSignup !== 'undefined') window.doSignup = doSignup;
+if (typeof showForgotScreen !== 'undefined') window.showForgotScreen = showForgotScreen;
+if (typeof hideForgotScreen !== 'undefined') window.hideForgotScreen = hideForgotScreen;
+if (typeof sendResetCode !== 'undefined') window.sendResetCode = sendResetCode;
+if (typeof doResetPassword !== 'undefined') window.doResetPassword = doResetPassword;
+if (typeof checkVerification !== 'undefined') window.checkVerification = checkVerification;
+if (typeof resendVerification !== 'undefined') window.resendVerification = resendVerification;
+if (typeof doSignOut !== 'undefined') window.doSignOut = doSignOut;
+if (typeof saveFirebaseUrl !== 'undefined') window.saveFirebaseUrl = saveFirebaseUrl;
+if (typeof sendChat !== 'undefined') window.sendChat = sendChat;
+if (typeof toggleFaq !== 'undefined') window.toggleFaq = toggleFaq;
+if (typeof submitQuestion !== 'undefined') window.submitQuestion = submitQuestion;
+if (typeof deleteQuestion !== 'undefined') window.deleteQuestion = deleteQuestion;
+if (typeof openApplyModal !== 'undefined') window.openApplyModal = openApplyModal;
+if (typeof closeApplyModal !== 'undefined') window.closeApplyModal = closeApplyModal;
+if (typeof switchApplyRole !== 'undefined') window.switchApplyRole = switchApplyRole;
+if (typeof submitApplyForm !== 'undefined') window.submitApplyForm = submitApplyForm;
+if (typeof showApplyForm !== 'undefined') window.showApplyForm = showApplyForm;
+if (typeof submitApplyDesktop !== 'undefined') window.submitApplyDesktop = submitApplyDesktop;
+if (typeof filterApps !== 'undefined') window.filterApps = filterApps;
+if (typeof decideApp !== 'undefined') window.decideApp = decideApp;
+if (typeof runZeroGPT !== 'undefined') window.runZeroGPT = runZeroGPT;
+if (typeof loadApplications !== 'undefined') window.loadApplications = loadApplications;
+if (typeof adminLogin !== 'undefined') window.adminLogin = adminLogin;
+if (typeof adminLogout !== 'undefined') window.adminLogout = adminLogout;
+if (typeof switchStatusTab !== 'undefined') window.switchStatusTab = switchStatusTab;
+if (typeof checkStatus !== 'undefined') window.checkStatus = checkStatus;
+if (typeof toggleProfilePanel !== 'undefined') window.toggleProfilePanel = toggleProfilePanel;
+if (typeof handleAvatarUpload !== 'undefined') window.handleAvatarUpload = handleAvatarUpload;
+if (typeof openAdminPanel !== 'undefined') window.openAdminPanel = openAdminPanel;
+if (typeof closeAdminPanel !== 'undefined') window.closeAdminPanel = closeAdminPanel;
+if (typeof switchAdminTab !== 'undefined') window.switchAdminTab = switchAdminTab;
+if (typeof loadQAPending !== 'undefined') window.loadQAPending = loadQAPending;
+if (typeof answerQuestion !== 'undefined') window.answerQuestion = answerQuestion;
+if (typeof switchAuthTab !== 'undefined') window.switchAuthTab = switchAuthTab;
+if (typeof updateProfilePanel !== 'undefined') window.updateProfilePanel = updateProfilePanel;
+if (typeof loadChatMessages !== 'undefined') window.loadChatMessages = loadChatMessages;
+if (typeof saveEmailJS !== 'undefined') window.saveEmailJS = saveEmailJS;
+
 </script>
 <!-- GCASH PAYMENT MODAL -->
 <div id="gcashModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(7,6,13,0.96);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeGcash()">
@@ -4499,7 +4559,7 @@ function wtClose() {
 (function() {
   // Inject CSS
   var s = document.createElement('style');
-  s.textContent = '#tabSections { display: none; } .page-tab { display: none; } body.tab-mode > *:not(nav):not(script):not(#mobileMenu):not(#authModal):not(#adminModal):not(#gcashModal):not(#tourOverlay):not(#tabSections) { display: none !important; } body.tab-mode #tabSections { display: block !important; } body.tab-mode .page-tab.tab-showing { display: block !important; } body.tab-mode .page-tab.tab-showing * { opacity: 1 !important; transform: none !important; transition: none !important; }';
+  s.textContent = '#tabSections { display: none; } .page-tab { display: none; } body.tab-mode > *:not(nav):not(script):not(#mobileMenu):not(#authModal):not(#adminModal):not(#gcashModal):not(#tourOverlay):not(#applyModal):not(#tabSections) { display: none !important; } body.tab-mode #tabSections { display: block !important; } body.tab-mode .page-tab.tab-showing { display: block !important; } body.tab-mode .page-tab.tab-showing * { opacity: 1 !important; transform: none !important; transition: none !important; }';
   document.head.appendChild(s);
 
   // On load: move any orphaned tabs back into tabSections
