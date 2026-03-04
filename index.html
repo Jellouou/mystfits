@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LetterCraft — Application Letter & Resume Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0f0e0c;--cream:#f5f0e8;--paper:#faf8f4;--gold:#c9963a;--rust:#b84c2e;--sage:#4a6741;--muted:#8a8278;--border:#d8d0c4;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  .top-bar{height:4px;background:linear-gradient(90deg,var(--rust),var(--gold),var(--sage));}
+  header{padding:1.75rem 2rem;text-align:center;border-bottom:1px solid var(--border);background:var(--cream);}
+  header::before{content:'MABISANG KOMUNIKASYON';display:block;font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.3em;color:var(--muted);margin-bottom:4px;}
+  header h1{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;}
+  header h1 span{color:var(--gold);font-style:italic;}
+  header p{color:var(--muted);font-size:.85rem;margin-top:4px;}
+  .tabs{display:flex;justify-content:center;background:var(--cream);border-bottom:1px solid var(--border);padding:1.25rem 2rem 0;}
+  .tab-btn{padding:.65rem 1.75rem;border:1px solid var(--border);border-bottom:none;background:var(--paper);color:var(--muted);font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.1em;cursor:pointer;transition:all .2s;position:relative;top:1px;}
+  .tab-btn:first-child{border-radius:6px 0 0 0;}.tab-btn:last-child{border-radius:0 6px 0 0;border-left:none;}
+  .tab-btn.active{background:white;color:var(--ink);font-weight:600;z-index:1;border-bottom:1px solid white;}
+  .tab-content{display:none;}.tab-content.active{display:block;}
+  .main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;display:grid;grid-template-columns:430px 1fr;gap:2rem;align-items:start;}
+  @media(max-width:900px){.main{grid-template-columns:1fr;}}
+  .panel{background:white;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+  .panel-header{padding:.9rem 1.25rem;border-bottom:1px solid var(--border);background:var(--cream);font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;}
+  .panel-body{padding:1.25rem;}
+  .job-lbl{display:block;font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+  .job-cards{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:1rem;}
+  .job-card{padding:.65rem .75rem;border:1.5px solid var(--border);border-radius:3px;background:var(--paper);cursor:pointer;transition:all .15s;}
+  .job-card:hover{border-color:var(--gold);background:#fffbf3;}
+  .job-card.selected{border-color:var(--ink);background:var(--ink);color:var(--cream);}
+  .jc-title{font-family:'DM Mono',monospace;font-size:.68rem;font-weight:600;letter-spacing:.04em;}
+  .jc-sub{font-size:.64rem;color:var(--muted);margin-top:2px;}
+  .job-card.selected .jc-sub{color:#b8b0a8;}
+  .vbox{background:var(--ink);color:var(--cream);padding:.85rem 1.1rem;border-radius:3px;margin-bottom:1rem;display:none;}
+  .vbox.on{display:block;}
+  .vb-lbl{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.2em;color:var(--gold);margin-bottom:3px;}
+  .vb-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;}
+  .vb-q{font-size:.7rem;color:#b8b0a8;line-height:1.5;margin-top:5px;}
+  .fguide{background:#fffbf3;border:1px solid #e8d9b8;border-left:3px solid var(--gold);padding:.75rem 1rem;border-radius:0 3px 3px 0;margin-bottom:1rem;}
+  .fg-t{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--gold);text-transform:uppercase;margin-bottom:3px;}
+  .fg-x{font-size:.76rem;color:#6b5e4a;line-height:1.55;}
+  .div{display:flex;align-items:center;gap:8px;margin:1rem 0 .8rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;}
+  .div::before,.div::after{content:'';flex:1;height:1px;background:var(--border);}
+  .field{margin-bottom:.9rem;}
+  label{display:block;font-family:'DM Mono',monospace;font-size:.63rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+  input,textarea,select{width:100%;padding:.58rem .78rem;border:1px solid var(--border);border-radius:3px;background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:.875rem;transition:border-color .2s,box-shadow .2s;appearance:none;box-sizing:border-box;}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,150,58,.1);}
+  textarea{resize:vertical;min-height:72px;line-height:1.5;}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238a8278' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .8rem center;padding-right:2.25rem;cursor:pointer;}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+  .hint{font-size:.68rem;color:var(--muted);margin-top:3px;font-style:italic;}
+  .btn-gen{width:100%;padding:.85rem;background:var(--ink);color:var(--cream);border:none;border-radius:3px;font-family:'DM Mono',monospace;font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-top:8px;}
+  .btn-gen:hover{background:#1e1c19;transform:translateY(-1px);}
+  .btn-gen:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+  .obody{padding:1.25rem;min-height:400px;}
+  .ph{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:350px;text-align:center;color:var(--muted);gap:12px;}
+  .ph .ico{font-size:2.5rem;opacity:.2;}
+  .ph p{font-family:'DM Mono',monospace;font-size:.7rem;line-height:1.7;}
+  .ld{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:350px;gap:16px;}
+  .ld.on{display:flex;}
+  .dots{display:flex;gap:6px;}
+  .dots span{width:8px;height:8px;background:var(--gold);border-radius:50%;animation:dp 1.4s ease-in-out infinite;}
+  .dots span:nth-child(2){animation-delay:.2s;}.dots span:nth-child(3){animation-delay:.4s;}
+  @keyframes dp{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+  .ld-txt{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted);}
+  .docpaper{background:white;border:1px solid var(--border);padding:2rem 2.25rem;font-family:'Times New Roman',Times,serif;font-size:.9rem;line-height:1.8;color:#1a1a1a;white-space:pre-wrap;border-radius:2px;box-shadow:0 2px 16px rgba(0,0,0,.06);}
+  .abar{display:flex;gap:8px;margin-top:10px;}
+  .btn-a{flex:1;padding:.55rem;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-family:'DM Mono',monospace;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;border-radius:3px;cursor:pointer;transition:all .15s;}
+  .btn-a:hover{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+  footer{text-align:center;padding:1.5rem;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;color:var(--muted);}
+  /* API KEY BANNER */
+  .api-banner{background:var(--cream);border-bottom:1px solid var(--border);padding:.65rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+  .api-banner-left{display:flex;align-items:center;gap:.6rem;}
+  .api-dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;}
+  .api-dot.connected{background:#5a9e5a;}
+  .api-banner-txt{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted);}
+  .api-banner-txt strong{color:var(--ink);}
+  .api-input-wrap{display:flex;gap:6px;align-items:center;}
+  .api-input{width:260px;padding:.38rem .65rem;font-family:'DM Mono',monospace;font-size:.7rem;border:1px solid var(--border);border-radius:3px;background:var(--paper);color:var(--ink);}
+  .api-input:focus{outline:none;border-color:var(--gold);}
+  .api-save-btn{padding:.38rem .9rem;background:var(--ink);color:var(--cream);border:none;border-radius:3px;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.08em;cursor:pointer;white-space:nowrap;}
+  .api-save-btn:hover{background:#333;}
+  .api-clear-btn{padding:.38rem .7rem;background:none;color:var(--muted);border:1px solid var(--border);border-radius:3px;font-family:'DM Mono',monospace;font-size:.65rem;cursor:pointer;}
+  .ai-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#1a1a2e,#16213e);color:#e8d5a3;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;padding:.25rem .6rem;border-radius:3px;margin-left:6px;vertical-align:middle;}
+  .ai-mode-note{font-size:.68rem;color:var(--sage);font-style:italic;margin-top:3px;}
+</style>
+</head>
+<body>
+<div class="top-bar"></div>
+<header>
+  <h1>Letter<span>Craft</span></h1>
+  <p>Application Letter & Resume Generator — Mabisang Komunikasyon</p>
+</header>
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('cover',this)">✉ Application Letter</button>
+  <button class="tab-btn" onclick="switchTab('resume',this)">📄 Resume</button>
+</div>
+
+<!-- API KEY BANNER -->
+<div class="api-banner">
+  <div class="api-banner-left">
+    <div class="api-dot" id="api-dot"></div>
+    <div class="api-banner-txt" id="api-status-txt"><strong>AI Enhancement:</strong> Enter your Anthropic API key to polish your letter &amp; resume with AI.</div>
+  </div>
+  <div class="api-input-wrap">
+    <input type="password" class="api-input" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+    <button class="api-save-btn" onclick="saveApiKey()">Save Key</button>
+    <button class="api-clear-btn" onclick="clearApiKey()">Clear</button>
+  </div>
+</div>
+
+<!-- APPLICATION LETTER -->
+<div id="tab-cover" class="tab-content active">
+  <div class="main">
+    <div class="panel">
+      <div class="panel-header">✉ Iyong Impormasyon</div>
+      <div class="panel-body">
+        <span class="job-lbl">Piliin ang Job Vacancy *</span>
+        <div class="job-cards">
+          <div class="job-card" onclick="selJob('cover','pm',this)"><div class="jc-title">Project Manager</div><div class="jc-sub">3 yrs exp • PMP advantage</div></div>
+          <div class="job-card" onclick="selJob('cover','me',this)"><div class="jc-title">Mechanical Engineer</div><div class="jc-sub">1 yr exp • PRC licensed</div></div>
+          <div class="job-card" onclick="selJob('cover','ce',this)"><div class="jc-title">Civil Engineer</div><div class="jc-sub">1 yr exp • PRC licensed</div></div>
+          <div class="job-card" onclick="selJob('cover','ome',this)"><div class="jc-title">O&M Engineer</div><div class="jc-sub">2 yrs exp • PRC licensed</div></div>
+        </div>
+        <div class="vbox" id="cv-vbox"></div>
+        <div class="fguide"><div class="fg-t">📋 Format ng Gabay ng Prof</div><div class="fg-x">Salutation → Opening (1-2 sent.) → 2nd Para (4-5 sent., 3 reasons) → 3rd Para (why company) → Closing → Lagda</div></div>
+        <div class="div">Personal Info</div>
+        <div class="frow">
+          <div class="field"><label>Buong Pangalan *</label><input type="text" id="cl-name" placeholder="Juan dela Cruz"></div>
+          <div class="field"><label>Petsa ng Liham</label><input type="text" id="cl-date"></div>
+        </div>
+        <div class="field"><label>Iyong Tirahan</label><input type="text" id="cl-address" placeholder="123 Rizal St., Cebu City"></div>
+        <div class="field"><label>Email / Contact</label><input type="text" id="cl-contact" placeholder="email@gmail.com / 09XX-XXX-XXXX"></div>
+        <div class="div">Recipient Info</div>
+        <div class="frow">
+          <div class="field"><label>Pangalan ng HR</label><input type="text" id="cl-hr" placeholder="Maria Santos (o iwan blank)"><div class="hint">Blank = "Human Resource Director"</div></div>
+          <div class="field"><label>Kasarian</label><select id="cl-sex"><option value="x">Walang pangalan</option><option value="f">Babae — Ms./Mrs.</option><option value="m">Lalaki — Mr.</option></select></div>
+        </div>
+        <div class="field"><label>Pangalan ng Kumpanya</label><input type="text" id="cl-co" placeholder="ABC Construction Corp."></div>
+        <div class="field"><label>Address ng Kumpanya</label><input type="text" id="cl-coa" placeholder="456 Business Ave., Makati City"></div>
+        <div class="field"><label>Paano Mo Nalaman ang Job Opening?</label><input type="text" id="cl-src" placeholder="JobStreet.com, company website, referral..."></div>
+        <div class="div">Iyong Qualifications</div>
+        <div class="field"><label>Degree / Kurso</label><select id="cl-deg"><option value="">— Piliin ang Job Vacancy muna —</option></select></div>
+        <div class="field"><label id="cl-explbl">Taon ng Karanasan</label><input type="text" id="cl-exp" placeholder="3 years"></div>
+        <div class="field"><label id="cl-crtlbl">Certifications / Licenses</label><input type="text" id="cl-crt" placeholder=""></div>
+        <div class="field">
+          <label>3 Specific Reasons / Achievements</label>
+          <textarea id="cl-ach" style="min-height:90px" placeholder="1. Una mong achievement o dahilan&#10;2. Ikalawang achievement o dahilan&#10;3. Ikatlong achievement o dahilan"></textarea>
+          <div class="hint">TATLONG specific na dahilan — pangunahing content ng 2nd paragraph</div>
+        </div>
+        <div class="field"><label>Bakit Interesado sa Kumpanyang Ito?</label><textarea id="cl-why" placeholder="Ipaliwanag kung bakit gusto mo ang kumpanyang ito..."></textarea><div class="hint">Para sa 3rd paragraph</div></div>
+        <button class="btn-gen" id="cl-btn" onclick="genCL()">✦ GENERATE APPLICATION LETTER</button>
+        <div class="ai-mode-note" id="cl-mode-note">⚡ Mode: Template only — add API key above to enable AI polishing</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">📝 Iyong Application Letter</div>
+      <div class="obody">
+        <div class="ph" id="cl-ph"><div class="ico">✉</div><p>Piliin ang job vacancy<br>punan ang form<br>tapos i-click ang Generate.</p></div>
+        <div class="ld" id="cl-ld"><div class="dots"><span></span><span></span><span></span></div><div class="ld-txt">Isinusulat ang iyong letter...</div></div>
+        <div id="cl-res" style="display:none">
+          <div class="docpaper" id="cl-txt"></div>
+          <div class="abar">
+            <button class="btn-a" onclick="cpDoc('cl-txt')">⎘ Kopyahin</button>
+            <button class="btn-a" onclick="prDoc('cl-txt')">⎙ I-print</button>
+            <button class="btn-a" onclick="rstOut('cl')">↺ I-reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESUME -->
+<div id="tab-resume" class="tab-content">
+  <div class="main">
+    <div class="panel">
+      <div class="panel-header">📄 Resume Information</div>
+      <div class="panel-body">
+        <span class="job-lbl">Piliin ang Job Vacancy *</span>
+        <div class="job-cards">
+          <div class="job-card" onclick="selJob('resume','pm',this)"><div class="jc-title">Project Manager</div><div class="jc-sub">3 yrs exp • PMP advantage</div></div>
+          <div class="job-card" onclick="selJob('resume','me',this)"><div class="jc-title">Mechanical Engineer</div><div class="jc-sub">1 yr exp • PRC licensed</div></div>
+          <div class="job-card" onclick="selJob('resume','ce',this)"><div class="jc-title">Civil Engineer</div><div class="jc-sub">1 yr exp • PRC licensed</div></div>
+          <div class="job-card" onclick="selJob('resume','ome',this)"><div class="jc-title">O&M Engineer</div><div class="jc-sub">2 yrs exp • PRC licensed</div></div>
+        </div>
+        <div class="vbox" id="rv-vbox"></div>
+        <div class="div">Personal Info</div>
+        <div class="frow">
+          <div class="field"><label>Buong Pangalan *</label><input type="text" id="r-name" placeholder="Juan dela Cruz"></div>
+          <div class="field"><label>Contact Number</label><input type="text" id="r-ph" placeholder="+63 9XX XXX XXXX"></div>
+        </div>
+        <div class="frow">
+          <div class="field"><label>Email</label><input type="email" id="r-em" placeholder="email@gmail.com"></div>
+          <div class="field"><label>Lokasyon</label><input type="text" id="r-loc" placeholder="Cebu City"></div>
+        </div>
+        <div class="field"><label>LinkedIn / Portfolio</label><input type="text" id="r-li" placeholder="linkedin.com/in/... (optional)"></div>
+        <div class="div">Edukasyon</div>
+        <div class="field"><label>Paaralan / Unibersidad</label><input type="text" id="r-sch" placeholder="University of the Philippines"></div>
+        <div class="frow">
+          <div class="field"><label>Degree / Kurso</label><select id="r-deg"><option value="">— Piliin ang Job Vacancy muna —</option></select></div>
+          <div class="field"><label>Taon ng Graduation</label><input type="text" id="r-yr" placeholder="2019"></div>
+        </div>
+        <div class="field"><label>GWA / Honors</label><input type="text" id="r-gwa" placeholder="Cum Laude, 1.45 GWA"></div>
+        <div class="div">Karanasan</div>
+        <div class="field"><label>Work Experience</label><textarea id="r-exp" style="min-height:100px" placeholder="Job Title — Kumpanya (Taon–Taon)&#10;- Achievement 1&#10;- Achievement 2"></textarea></div>
+        <div class="field"><label id="r-crtlbl">Certifications / Licenses</label><input type="text" id="r-crt" placeholder=""></div>
+        <div class="div">Skills at Iba Pa</div>
+        <div class="field"><label>Skills</label><textarea id="r-sk" placeholder="Technical skills, soft skills, software/tools..."></textarea></div>
+        <div class="field"><label>Organizations</label><textarea id="r-org" placeholder="PMI member, PICE member..."></textarea></div>
+        <div class="field"><label>Awards / Achievements</label><textarea id="r-aw" placeholder="Best Employee, Top Graduate..."></textarea></div>
+        <div class="field"><label>Career Objective (o iwan blank)</label><textarea id="r-obj" placeholder="Auto-generate kung blank..."></textarea></div>
+        <button class="btn-gen" id="r-btn" onclick="genRES()">✦ GENERATE RESUME</button>
+        <div class="ai-mode-note" id="r-mode-note">⚡ Mode: Template only — add API key above to enable AI polishing</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">📋 Iyong Resume</div>
+      <div class="obody">
+        <div class="ph" id="r-ph"><div class="ico">📄</div><p>Piliin ang job vacancy<br>punan ang form<br>tapos i-click ang Generate.</p></div>
+        <div class="ld" id="r-ld"><div class="dots"><span></span><span></span><span></span></div><div class="ld-txt">Isinusulat ang iyong resume...</div></div>
+        <div id="r-res" style="display:none">
+          <div class="docpaper" id="r-txt"></div>
+          <div class="abar">
+            <button class="btn-a" onclick="cpDoc('r-txt')">⎘ Kopyahin</button>
+            <button class="btn-a" onclick="prDoc('r-txt')">⎙ I-print</button>
+            <button class="btn-a" onclick="rstOut('r')">↺ I-reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<footer>LETTERCRAFT — MABISANG KOMUNIKASYON</footer>
+
+<script>
+// ═══════════════════════════════════════════════
+// JOB DATA — accurate, PRC-based
+// ═══════════════════════════════════════════════
+const JOBS = {
+  pm: {
+    title:"Project Manager",
+    quals:["Bachelor's degree in Project Management, Engineering, Business Administration, or any related field","At least 3 years of relevant experience in project management","PMP certification is an advantage","Strong leadership, organizational, and decision-making skills","Excellent communication and stakeholder management skills"],
+    // PM accepts many degrees — based on real PH job postings
+    degrees:[
+      "BS Project Management","BS Business Administration","BS Engineering Management",
+      "BS Industrial Engineering","BS Civil Engineering","BS Mechanical Engineering",
+      "BS Electrical Engineering","BS Computer Engineering","BS Information Technology",
+      "BS Architecture","BS Construction Management","BS Operations Management",
+      "BS Management Engineering","BS Technology Management","BS Commerce"
+    ],
+    certLabel:"PMP / Other Certifications",
+    certs:[
+      "Project Management Professional (PMP) — PMI (2022)",
+      "Certified Associate in Project Management (CAPM) — PMI (2023)",
+      "Google Project Management Certificate — Coursera (2023)",
+      "Agile Certified Practitioner (PMI-ACP) — PMI (2022)",
+      "Six Sigma Green Belt — ASQ (2021)",
+      "Six Sigma Black Belt — ASQ (2022)",
+      "Certified ScrumMaster (CSM) — Scrum Alliance (2023)",
+      "PRINCE2 Foundation Certificate (2022)",
+      "Microsoft Project Certification (2023)",
+      "Project Management Certificate — Asian Institute of Management (2022)",
+      "Lean Six Sigma Yellow Belt (2021)",
+      "Certified Project Manager (CPM) — IPMA (2022)",
+      "Construction Management Certificate — CIDB (2023)",
+      "Risk Management Professional (PMI-RMP) — PMI (2023)",
+      "PMI Agile Certified Practitioner — PMI (2022)"
+    ],
+    expLabel:"Taon ng Karanasan sa Project Management",
+    expPH:"3 years",
+    skills:"Agile/Scrum, MS Project, risk management, budget forecasting, stakeholder management, strategic planning, leadership, decision-making, MS Office, resource allocation",
+  },
+  me: {
+    title:"Mechanical Engineer",
+    quals:["Bachelor's degree in Mechanical Engineering","Licensed Mechanical Engineer (PRC) with updated license","At least 1 year of relevant work experience","Knowledge in mechanical systems design, maintenance, and troubleshooting","Ability to read and interpret technical drawings and specifications","Experience in HVAC, piping, or industrial equipment is an advantage"],
+    // ME board exam strictly requires BSME only (PRC requirement)
+    degrees:[
+      "BS Mechanical Engineering",
+      "BS Mechanical Engineering (Major in Thermal Engineering)",
+      "BS Mechanical Engineering (Major in Manufacturing Engineering)",
+      "BS Mechanical Engineering (Major in Mechatronics)",
+      "BS Mechanical Engineering (Major in Energy Engineering)",
+      "BS Mechanical Engineering (Major in Industrial Engineering)",
+      "BS Mechanical Engineering — with Specialization in HVAC",
+      "BS Mechanical Engineering — with Specialization in Robotics",
+      "BS Mechanical Engineering — with Specialization in Automotive Engineering",
+      "BS Mechanical Engineering — with Specialization in Power Systems",
+      "BS Mechanical Engineering — with Specialization in Materials Engineering",
+      "BS Mechanical Engineering — with Specialization in Product Design",
+      "BS Mechanical Engineering — with Specialization in Renewable Energy",
+      "BS Mechanical Engineering — with Specialization in Manufacturing Systems",
+      "BS Mechanical Engineering — with Specialization in Mechatronics Engineering"
+    ],
+    certLabel:"PRC License / Other Certifications",
+    certs:[
+      "Licensed Mechanical Engineer — PRC License No. 0XXXXX (2022)",
+      "Licensed Mechanical Engineer — PRC License No. 0XXXXX (2021)",
+      "Licensed Mechanical Engineer — PRC License No. 0XXXXX (2023)",
+      "Licensed Mechanical Engineer — PRC License No. 0XXXXX (2020)",
+      "Licensed Mechanical Engineer — PRC License No. 0XXXXX (2019)",
+      "Licensed Mechanical Engineer + TESDA NCII in Refrigeration & Air-Conditioning",
+      "Licensed Mechanical Engineer + Certified Maintenance & Reliability Professional (CMRP)",
+      "Licensed Mechanical Engineer + ASME Certification (2022)",
+      "Licensed Mechanical Engineer + ISO 9001:2015 Internal Auditor",
+      "Licensed Mechanical Engineer + Six Sigma Yellow Belt",
+      "Licensed Mechanical Engineer + AutoCAD Certified Professional",
+      "Licensed Mechanical Engineer + SOLIDWORKS Certification",
+      "Licensed Mechanical Engineer + Certified Energy Auditor (CEA)",
+      "Licensed Mechanical Engineer + HVAC Technician Certification",
+      "Licensed Mechanical Engineer + PRC Renewal – valid until 2025"
+    ],
+    expLabel:"Taon ng Karanasan sa Mechanical Engineering",
+    expPH:"1 year",
+    skills:"AutoCAD, SOLIDWORKS, mechanical systems design, preventive maintenance, corrective maintenance, HVAC, thermodynamics, fluid mechanics, piping systems, machine design, troubleshooting, technical drawing interpretation",
+  },
+  ce: {
+    title:"Civil Engineer",
+    quals:["Bachelor's degree in Civil Engineering","Licensed Civil Engineer (PRC) with updated license","At least 1 year of experience in construction or infrastructure projects","Knowledge in structural analysis, site supervision, and project implementation","Ability to interpret plans, specifications, and construction drawings","Experience in quantity surveying or project cost estimation is an advantage"],
+    // CE board exam strictly requires BS Civil Engineering only (PRC R.A. 544)
+    degrees:[
+      "BS Civil Engineering",
+      "BS Civil Engineering (Major in Structural Engineering)",
+      "BS Civil Engineering (Major in Geotechnical Engineering)",
+      "BS Civil Engineering (Major in Transportation Engineering)",
+      "BS Civil Engineering (Major in Water Resources Engineering)",
+      "BS Civil Engineering (Major in Construction Engineering & Management)",
+      "BS Civil Engineering (Major in Environmental Engineering)",
+      "BS Civil Engineering — with Specialization in Structural Design",
+      "BS Civil Engineering — with Specialization in Highway Engineering",
+      "BS Civil Engineering — with Specialization in Construction Management",
+      "BS Civil Engineering — with Specialization in Hydraulics & Sanitation",
+      "BS Civil Engineering — with Specialization in Foundation Engineering",
+      "BS Civil Engineering — with Specialization in Project Management",
+      "BS Civil Engineering — with Specialization in Urban Planning",
+      "BS Civil Engineering — with Specialization in Infrastructure Development"
+    ],
+    certLabel:"PRC License / Other Certifications",
+    certs:[
+      "Licensed Civil Engineer — PRC License No. 0XXXXX (2022)",
+      "Licensed Civil Engineer — PRC License No. 0XXXXX (2021)",
+      "Licensed Civil Engineer — PRC License No. 0XXXXX (2023)",
+      "Licensed Civil Engineer — PRC License No. 0XXXXX (2020)",
+      "Licensed Civil Engineer — PRC License No. 0XXXXX (2019)",
+      "Licensed Civil Engineer + DPWH Accredited Engineer",
+      "Licensed Civil Engineer + PHILGEPS Registered Professional",
+      "Licensed Civil Engineer + TESDA NCII in Construction Works",
+      "Licensed Civil Engineer + AutoCAD Certified Professional",
+      "Licensed Civil Engineer + Construction Management Certificate — CIDB",
+      "Licensed Civil Engineer + PICE Accredited Member",
+      "Licensed Civil Engineer + ISO 9001:2015 Internal Auditor",
+      "Licensed Civil Engineer + Certified Construction Manager (CCM)",
+      "Licensed Civil Engineer + LEED Green Associate",
+      "Licensed Civil Engineer + PRC Renewal – valid until 2025"
+    ],
+    expLabel:"Taon ng Karanasan sa Civil Engineering",
+    expPH:"1 year",
+    skills:"AutoCAD, STAAD Pro, structural analysis, site supervision, blueprint reading, quantity surveying, cost estimation, construction management, concrete design, steel design, project scheduling, safety compliance",
+  },
+  ome: {
+    title:"Operations and Maintenance Engineer",
+    quals:["Bachelor's degree in Engineering (Mechanical, Electrical, Civil, or related field)","Licensed Engineer (PRC) with updated license","At least 2 years of relevant experience in operations and maintenance","Knowledge in preventive and corrective maintenance systems","Experience in troubleshooting equipment and facility systems","Familiarity with CMMS and safety protocols is an advantage"],
+    // O&M accepts multiple engineering disciplines
+    degrees:[
+      "BS Mechanical Engineering","BS Electrical Engineering","BS Civil Engineering",
+      "BS Electronics Engineering","BS Chemical Engineering",
+      "BS Electromechanical Engineering","BS Manufacturing Engineering",
+      "BS Instrumentation & Control Engineering","BS Industrial Engineering",
+      "BS Mechatronics Engineering","BS Environmental Engineering",
+      "BS Petroleum Engineering","BS Marine Engineering","BS Agricultural Engineering",
+      "BS Sanitary Engineering"
+    ],
+    certLabel:"PRC License / Other Certifications",
+    certs:[
+      "Licensed Mechanical Engineer — PRC License No. 0XXXXX (2022)",
+      "Licensed Electrical Engineer — PRC License No. 0XXXXX (2021)",
+      "Licensed Civil Engineer — PRC License No. 0XXXXX (2023)",
+      "Licensed Electronics Engineer — PRC License No. 0XXXXX (2022)",
+      "Licensed Chemical Engineer — PRC License No. 0XXXXX (2021)",
+      "Licensed Engineer + Certified Maintenance & Reliability Professional (CMRP)",
+      "Licensed Engineer + ISO 9001:2015 Internal Auditor",
+      "Licensed Engineer + ISO 14001 Environmental Management Systems",
+      "Licensed Engineer + ISO 45001 Occupational Health & Safety",
+      "Licensed Engineer + Six Sigma Yellow Belt",
+      "Licensed Engineer + Certified Energy Manager (CEM)",
+      "Licensed Engineer + TESDA NCII in Facilities Maintenance",
+      "Licensed Engineer + HVAC Technician Certification",
+      "Licensed Engineer + CMMS Certified Professional",
+      "Licensed Engineer + PRC Renewal – valid until 2025"
+    ],
+    expLabel:"Taon ng Karanasan sa Operations & Maintenance",
+    expPH:"2 years",
+    skills:"Preventive/corrective maintenance, CMMS, equipment troubleshooting, facility management, HVAC systems, electrical systems, safety protocols, OSHA standards, root cause analysis, work order management, predictive maintenance",
+  }
+};
+
+// ═══════════════════════════════════════════════
+// VARIATION POOL — 100+ combos per output
+// ═══════════════════════════════════════════════
+const V = {
+  salutNone:["Dear Human Resource Director:","Dear Hiring Manager:","Dear Recruitment Officer:","Dear Human Resources Department:","Dear Talent Acquisition Manager:","Dear Human Resources Manager:","Dear Recruiting Manager:","Dear Staffing Manager:"],
+
+  open:[
+    (p,c,s)=>`I am writing to express my sincere interest in the ${p} position at ${c}, which I discovered through ${s}. Enclosed herewith is my resume for your kind review and consideration.`,
+    (p,c,s)=>`Please find enclosed my resume in formal application for the ${p} vacancy at ${c}, which came to my attention through ${s}. I am confident that my qualifications align well with the requirements of this role.`,
+    (p,c,s)=>`I am pleased to submit my application for the ${p} position advertised by ${c} on ${s}. Attached is my comprehensive resume for your evaluation.`,
+    (p,c,s)=>`With great enthusiasm, I am formally applying for the ${p} position at ${c}. I came across this opportunity through ${s}, and I am eager to bring my skills and experience to your esteemed organization.`,
+    (p,c,s)=>`I write to express my strong interest in joining ${c} as a ${p}, a position I learned of through ${s}. My enclosed resume details the qualifications and experience I believe make me a suitable candidate for this role.`,
+    (p,c,s)=>`It is with great interest and confidence that I submit my application for the ${p} position at ${c}, as advertised on ${s}. I have enclosed my resume for your review and consideration.`,
+    (p,c,s)=>`Upon learning of the ${p} opening at ${c} through ${s}, I immediately recognized this as an exceptional opportunity that aligns perfectly with my career aspirations and professional background.`,
+    (p,c,s)=>`I am submitting my application with enthusiasm for the ${p} role at ${c}, which I discovered through ${s}. Please consider my enclosed resume as a testament to my dedication and suitability for this position.`,
+    (p,c,s)=>`This letter serves as my formal application for the ${p} position currently available at ${c}, which I found through ${s}. I am enclosing my resume and trust that my qualifications will merit your consideration.`,
+    (p,c,s)=>`Having learned of the ${p} opportunity at ${c} via ${s}, I am eager to put forward my application. My enclosed resume provides a detailed account of my qualifications and professional achievements.`,
+    (p,c,s)=>`I am excited to apply for the ${p} position at ${c}, a role I discovered through ${s}. As evidenced in my enclosed resume, I possess the skills and experience required to make an immediate and meaningful contribution.`,
+    (p,c,s)=>`In response to the ${p} vacancy advertised by ${c} on ${s}, I am pleased to submit my application along with my enclosed resume for your careful consideration.`,
+    (p,c,s)=>`The ${p} position at ${c}, as posted on ${s}, immediately captured my attention as an ideal match for my professional background and career ambitions. I have enclosed my resume for your review.`,
+    (p,c,s)=>`I am writing with considerable enthusiasm to apply for the ${p} post at ${c}, which I came across through ${s}. My enclosed resume outlines the experience and qualifications I bring to this role.`,
+    (p,c,s)=>`Allow me to introduce myself as a highly motivated candidate for the ${p} position at ${c}, advertised through ${s}. I am enclosing my resume, which I believe demonstrates my readiness for this role.`,
+    (p,c,s)=>`It is my pleasure to submit my application for the ${p} role at ${c}. I came to know of this opportunity through ${s}, and I am confident that my enclosed resume will demonstrate my fitness for this position.`,
+  ],
+
+  q2intro:[
+    (p)=>`I am confident that I am a strong and highly qualified candidate for the ${p} position.`,
+    (p)=>`My educational background and professional experience make me well-suited for the responsibilities of a ${p}.`,
+    (p)=>`I believe my qualifications and track record make me an ideal fit for this ${p} role.`,
+    (p)=>`The following highlights demonstrate my readiness and capability to excel as a ${p}.`,
+    (p)=>`I am fully convinced that my skills and experience position me as a competitive applicant for the ${p} vacancy.`,
+    (p)=>`My professional journey has equipped me with the precise competencies required to thrive as a ${p}.`,
+    (p)=>`Having reviewed the qualifications for this role, I am confident that my background is an excellent match for the ${p} position.`,
+    (p)=>`My academic preparation and hands-on experience collectively make me a highly suitable candidate for the ${p} post.`,
+    (p)=>`I firmly believe that my qualifications, experience, and dedication make me the right person for this ${p} role.`,
+    (p)=>`My combined educational and professional background aligns strongly with the requirements for the ${p} position.`,
+    (p)=>`I bring to this application a well-rounded set of skills and accomplishments that are directly relevant to the ${p} role.`,
+    (p)=>`I approach this application with confidence, knowing that my experience and expertise align well with the ${p} vacancy.`,
+    (p)=>`My qualifications are a direct match for what your organization seeks in a ${p}, as I will outline below.`,
+    (p)=>`I am eager to demonstrate why my background makes me an exceptional candidate for the ${p} vacancy.`,
+    (p)=>`The skills and achievements I have developed throughout my career make me a strong contender for the ${p} position.`,
+    (p)=>`I have consistently built my career with the goal of excelling as a ${p}, and I believe the following highlights reflect that commitment.`,
+  ],
+
+  r1:["First,","To begin with,","First and foremost,","For one,","Initially,","To start with,","As a primary qualification,","Most notably,","One of my strongest attributes is that","Primary among my qualifications,","Leading with my most relevant strength,","Above all,","Chief among my competencies,","At the outset,","My foremost qualification is that"],
+  r2:["Second,","Additionally,","Furthermore,","Moreover,","In addition,","Building on this,","Equally important,","Beyond that,","Complementing this,","My second key strength is that","Adding to my qualifications,","Also of note,","To further demonstrate my suitability,","Another significant qualification is that","Beyond my first point,"],
+  r3:["Third,","Finally,","Lastly,","To complete my qualifications,","Rounding out my strengths,","As a final point,","Of equal significance,","Most importantly,","To conclude my list of qualifications,","My third and equally critical strength is that","Completing this picture,","To cap my qualifications,","Rounding out these competencies,","As a clinching point,","Lastly and perhaps most critically,"],
+
+  certS:[
+    (c)=>` Moreover, I hold a ${c}, which further validates my technical expertise and commitment to professional excellence.`,
+    (c)=>` In addition, I am a holder of ${c}, a credential that underscores my dedication to continuous professional development.`,
+    (c)=>` My ${c} further demonstrates my commitment to staying current with industry standards and best practices.`,
+    (c)=>` I also bring the added advantage of holding ${c}, which has significantly enhanced my professional capabilities.`,
+    (c)=>` Additionally, I have earned ${c}, a certification that reflects my dedication to professional growth and technical mastery.`,
+    (c)=>` I further augment my qualifications with ${c}, attesting to my commitment to excellence in my field.`,
+    (c)=>` Complementing my experience, I hold ${c}, which has provided me with advanced knowledge and a recognized professional credential.`,
+    (c)=>` My professional profile is further strengthened by ${c}, affirming my technical competence and ongoing commitment to my craft.`,
+    (c)=>` I also hold ${c}, a testament to my professional development and specialized expertise.`,
+    (c)=>` Notably, I am also a holder of ${c}, which reflects my proactive approach to professional growth and certification.`,
+    (c)=>` Furthermore, I have obtained ${c}, which positions me well above the basic requirements for this role.`,
+    (c)=>` I am pleased to add that I hold ${c}, a qualification that distinguishes me as a committed and credentialed professional.`,
+  ],
+
+  q2close:[
+    (c)=>`These competencies have consistently allowed me to deliver exceptional results, and I am confident they will serve ${c} equally well.`,
+    (c)=>`I am certain that these qualifications will enable me to contribute meaningfully and immediately to the goals of ${c}.`,
+    (c)=>`Taken together, these strengths position me to make a swift and significant impact at ${c}.`,
+    (c)=>`I am confident that this combination of skills and experience will translate into measurable contributions to ${c}'s success.`,
+    (c)=>`These qualifications have consistently driven my professional success, and I look forward to bringing them to bear at ${c}.`,
+    (c)=>`I am eager to leverage these strengths in service of ${c}'s objectives and strategic goals.`,
+    (c)=>`My track record demonstrates that I can apply these competencies to drive results that align with ${c}'s mission.`,
+    (c)=>`I am fully prepared to channel these skills and achievements into productive contributions at ${c}.`,
+    (c)=>`This combination of expertise and achievement has prepared me well for the challenges and opportunities that await at ${c}.`,
+    (c)=>`I am enthusiastic about bringing these capabilities to ${c} and contributing to its continued growth and success.`,
+    (c)=>`Together, these strengths make me a well-rounded candidate who is ready to add immediate value to ${c}.`,
+    (c)=>`I am eager to demonstrate the impact of these qualifications within the dynamic environment of ${c}.`,
+  ],
+
+  q3:[
+    (c,w)=>`I am particularly drawn to ${c} because ${w}. I firmly believe that my professional aspirations and core values are well-aligned with your organization's direction, and I am eager to grow alongside your team.`,
+    (c,w)=>`My interest in joining ${c} is driven by ${w}. I see a clear synergy between my personal career objectives and the mission of your organization, and I am excited at the prospect of contributing to it.`,
+    (c,w)=>`What sets ${c} apart for me is ${w}. I am confident that my professional goals and capabilities are in harmony with your company's vision, making this an opportunity I am deeply motivated to pursue.`,
+    (c,w)=>`I have long admired ${c} for ${w}. The opportunity to be part of such an organization deeply resonates with my career aspirations and my desire to make a meaningful professional contribution.`,
+    (c,w)=>`${c} stands out to me as an ideal employer because ${w}. I believe my values, ambitions, and professional strengths are directly aligned with your company's mission and culture.`,
+    (c,w)=>`My motivation to join ${c} stems from ${w}. I am inspired by your organization's work and am confident that my expertise will allow me to contribute significantly to your goals.`,
+    (c,w)=>`I am genuinely enthusiastic about the opportunity to work with ${c}, primarily because ${w}. I am confident that my skills and experiences are a strong match for your organizational culture and strategic direction.`,
+    (c,w)=>`The prospect of joining ${c} excites me greatly because ${w}. I am eager to align my professional growth with your company's continued pursuit of excellence.`,
+    (c,w)=>`I chose to apply to ${c} specifically because ${w}. I am convinced that this alignment of purpose will allow me to thrive within your organization while contributing meaningfully to its objectives.`,
+    (c,w)=>`Among the opportunities available to me, ${c} stands out because ${w}. I am deeply motivated to bring my skills and passion to an organization whose mission resonates so strongly with my own professional values.`,
+    (c,w)=>`My desire to join ${c} is rooted in ${w}. This alignment between your company's direction and my career goals makes this opportunity particularly compelling.`,
+    (c,w)=>`I am strongly motivated to contribute to ${c} because ${w}. I am confident that both the organization and I will benefit greatly from this professional alignment.`,
+    (c,w)=>`The values and mission of ${c} deeply appeal to me because ${w}. I am eager to apply my skills within an organization that reflects the professional standards I aspire to uphold.`,
+    (c,w)=>`I am convinced that ${c} is the right environment for my professional growth, particularly because ${w}. My career goals are well-aligned with your organization's vision, and I am committed to contributing to that shared success.`,
+    (c,w)=>`Working for ${c} has been a professional goal of mine because ${w}. I am confident that my background and dedication will allow me to make a tangible and lasting contribution to your team.`,
+    (c,w)=>`I am drawn to ${c} for a number of reasons, chief among them being ${w}. I see this as a mutually beneficial partnership and look forward to contributing to your continued success.`,
+  ],
+
+  q4:[
+    (c,ct)=>`I would be honored to have the opportunity to discuss my qualifications further in a personal interview. I am available at your convenience and may be reached at ${ct}. Thank you sincerely for your time and consideration.`,
+    (c,ct)=>`I welcome the chance to elaborate on my qualifications in an interview at your earliest convenience. Please feel free to contact me at ${ct}. Thank you for your time, and I look forward to hearing from you.`,
+    (c,ct)=>`I hope to have the pleasure of meeting with you to discuss how I may contribute to ${c}. I am available for an interview at any time and can be reached at ${ct}. Thank you for considering my application.`,
+    (c,ct)=>`I am eager to explore how my skills and experience align with the needs of ${c} in a formal interview. I can be reached at ${ct} at your most convenient time. I am grateful for your consideration.`,
+    (c,ct)=>`Should you wish to discuss my application further, I am readily available for an interview and can be contacted at ${ct}. I appreciate your time in reviewing my application and look forward to your favorable response.`,
+    (c,ct)=>`I sincerely hope to have the opportunity to meet with you and demonstrate how my qualifications can benefit ${c}. I may be contacted at ${ct} to schedule an interview at your convenience. Thank you very much.`,
+    (c,ct)=>`I would greatly appreciate the opportunity to discuss my application in greater detail during an interview. Please do not hesitate to contact me at ${ct}. I thank you for your kind attention to my application.`,
+    (c,ct)=>`I look forward to the possibility of joining ${c} and am available for an interview at any time that suits you. I can be reached at ${ct}. Thank you for your time and the opportunity to be considered.`,
+    (c,ct)=>`An interview at your convenience would allow me to expand on how my background aligns with ${c}'s needs. I can be reached at ${ct}. Thank you for your consideration, and I await your response with great anticipation.`,
+    (c,ct)=>`I trust that this letter and my enclosed resume will demonstrate my suitability for this role. I welcome an interview and may be reached at ${ct}. Thank you for taking the time to review my application.`,
+    (c,ct)=>`I am excited about the possibility of contributing to ${c} and would welcome the opportunity to meet with you at your convenience. I am reachable at ${ct}. Thank you for your time and careful consideration.`,
+    (c,ct)=>`I sincerely hope to discuss my qualifications with you in person and am available for an interview at any time. Please contact me at ${ct}. Thank you very much for this opportunity.`,
+    (c,ct)=>`I am confident that a personal interview will allow me to further illustrate the value I can bring to ${c}. I can be reached at ${ct} at your convenience. Thank you for your consideration.`,
+    (c,ct)=>`I would be delighted to meet with you at your earliest opportunity. Kindly reach me at ${ct}. I thank you sincerely for reviewing my application and look forward to your response.`,
+    (c,ct)=>`I look forward to discussing this position further and am available at ${ct} for a scheduled interview at any time convenient for you. Thank you for your time and consideration.`,
+    (c,ct)=>`Please feel free to contact me at ${ct} to arrange an interview at your earliest convenience. I look forward to the opportunity to speak with you and thank you sincerely for your consideration.`,
+  ],
+
+  signoff:["Sincerely yours,","Respectfully yours,","Very truly yours,","Cordially yours,","With warm regards,","Yours respectfully,","Most sincerely,","Yours very truly,","Faithfully yours,","With highest regards,"],
+
+  // Career objectives — 10 per job
+  obj:{
+    pm:[
+      (d,e)=>`Dynamic and results-driven Project Manager with a ${d} degree and ${e} of hands-on experience leading diverse teams and delivering complex projects within scope, schedule, and budget. Proven ability to manage stakeholder relationships, mitigate risks, and drive continuous improvement across all project phases.`,
+      (d,e)=>`Highly motivated ${d} graduate with ${e} of progressive project management experience. Skilled in strategic planning, resource allocation, and cross-functional team leadership. Committed to delivering measurable results and exceeding client expectations in every project undertaken.`,
+      (d,e)=>`Accomplished Project Manager equipped with a ${d} degree and ${e} of relevant industry experience. Demonstrated expertise in Agile and traditional project methodologies, budget management, and stakeholder communication. Passionate about driving organizational success through effective project execution.`,
+      (d,e)=>`Goal-oriented professional with a ${d} background and ${e} of experience managing end-to-end project lifecycles. Adept at risk identification, schedule management, and leading high-performing teams to achieve strategic organizational objectives.`,
+      (d,e)=>`Strategic and detail-oriented Project Manager holding a ${d} degree and ${e} of experience overseeing multi-disciplinary projects. Strong background in project planning, cost control, and quality assurance. Dedicated to delivering excellence in every project initiative.`,
+      (d,e)=>`Proactive Project Manager with a solid ${d} foundation and ${e} of experience coordinating complex projects from inception through completion. Recognized for strong leadership, exceptional organizational skills, and the ability to manage competing priorities effectively.`,
+      (d,e)=>`Experienced Project Manager with a ${d} degree and ${e} of demonstrated success in managing large-scale projects across various industries. Expert in stakeholder engagement, scope management, and team development, with a strong commitment to delivering projects on time and on budget.`,
+      (d,e)=>`Results-oriented professional with a ${d} degree and ${e} of experience in project planning, execution, and monitoring. Known for building high-performing teams, managing project risks effectively, and consistently delivering high-quality outcomes that align with organizational goals.`,
+      (d,e)=>`Dedicated Project Manager with a ${d} degree and ${e} of relevant experience delivering projects that align with organizational goals. Proficient in project scheduling tools, stakeholder communication, and change management. Committed to operational excellence and continuous improvement.`,
+      (d,e)=>`Ambitious and driven Project Manager holding a ${d} degree and ${e} of project management experience. Skilled in developing detailed project plans, managing interdependencies, and guiding teams to achieve project milestones efficiently and effectively.`,
+    ],
+    me:[
+      (d,e)=>`Licensed Mechanical Engineer with a ${d} degree and ${e} of professional experience in mechanical systems design, installation, and maintenance. Adept at troubleshooting complex mechanical issues and committed to delivering safe and efficient engineering solutions.`,
+      (d,e)=>`Technically proficient Mechanical Engineer holding a ${d} degree and ${e} of hands-on industry experience. Skilled in mechanical systems analysis, preventive maintenance, and technical drawing interpretation. Passionate about advancing engineering excellence and operational efficiency.`,
+      (d,e)=>`Detail-oriented ${d} graduate and licensed Mechanical Engineer with ${e} of relevant experience. Proven ability to design, evaluate, and maintain mechanical systems while ensuring strict adherence to safety standards and technical specifications.`,
+      (d,e)=>`Motivated and technically skilled Mechanical Engineer with a ${d} degree and ${e} of practical experience. Committed to applying engineering principles to develop innovative and cost-effective solutions that drive operational performance.`,
+      (d,e)=>`Results-driven licensed Mechanical Engineer with a ${d} degree and ${e} of industry experience. Experienced in conducting equipment inspections, preparing technical reports, and optimizing mechanical systems for maximum performance and reliability.`,
+      (d,e)=>`Competent and dedicated Mechanical Engineer holding a ${d} degree and ${e} of post-licensure experience. Skilled in mechanical systems troubleshooting, maintenance scheduling, and technical specifications development. Eager to contribute engineering expertise to a forward-thinking organization.`,
+      (d,e)=>`Analytical and solutions-focused Mechanical Engineer with a ${d} background and ${e} of hands-on professional experience. Proficient in engineering software to design efficient mechanical systems and resolve complex technical challenges efficiently and effectively.`,
+      (d,e)=>`Licensed and driven Mechanical Engineer with a ${d} degree and ${e} of relevant field experience. Known for a systematic approach to mechanical problem-solving, strong technical knowledge, and a commitment to delivering projects that meet or exceed quality standards.`,
+      (d,e)=>`Experienced ${d} holder and licensed Mechanical Engineer with ${e} of professional practice. Expert in reading technical drawings, conducting mechanical evaluations, and implementing effective maintenance protocols to ensure system reliability.`,
+      (d,e)=>`Highly capable Mechanical Engineer with a ${d} degree and ${e} of active industry experience. Combines strong theoretical foundations with practical application skills in mechanical systems design, testing, and maintenance to deliver superior engineering outcomes.`,
+    ],
+    ce:[
+      (d,e)=>`Licensed Civil Engineer with a ${d} degree and ${e} of professional experience in construction and infrastructure project delivery. Skilled in structural analysis, site supervision, and project implementation, with a strong commitment to quality and safety standards.`,
+      (d,e)=>`Driven and detail-oriented Civil Engineer holding a ${d} degree and ${e} of relevant industry experience. Proficient in interpreting construction drawings, conducting site inspections, and managing project execution from planning to completion.`,
+      (d,e)=>`Results-oriented licensed Civil Engineer with a ${d} background and ${e} of hands-on construction experience. Demonstrated expertise in structural analysis, cost estimation, and site management, with a focus on delivering projects safely and within budget.`,
+      (d,e)=>`Technically proficient Civil Engineer with a ${d} degree and ${e} of post-licensure experience. Adept at coordinating with contractors, reviewing technical specifications, and ensuring compliance with engineering standards and local regulations.`,
+      (d,e)=>`Motivated ${d} graduate and licensed Civil Engineer with ${e} of field experience. Known for strong analytical skills, precise attention to detail, and the ability to effectively supervise construction activities while maintaining the highest standards of quality and safety.`,
+      (d,e)=>`Competent Civil Engineer with a ${d} degree and ${e} of professional experience in structural and infrastructure projects. Skilled in utilizing engineering design tools, managing construction timelines, and collaborating with multidisciplinary teams to achieve project goals.`,
+      (d,e)=>`Experienced licensed Civil Engineer with a ${d} degree and ${e} of progressive field experience. Expert in structural design principles, site supervision best practices, and the accurate interpretation of engineering plans and specifications.`,
+      (d,e)=>`Methodical and goal-oriented Civil Engineer holding a ${d} degree and ${e} of professional practice. Recognized for a proactive approach to project challenges, strong problem-solving abilities, and an unwavering commitment to delivering safe and durable engineering solutions.`,
+      (d,e)=>`Dedicated Civil Engineer with a ${d} degree and ${e} of construction industry experience. Combines rigorous technical training with practical fieldwork skills in structural analysis, project planning, and site management to deliver exceptional engineering outcomes.`,
+      (d,e)=>`Professional and driven ${d} holder and licensed Civil Engineer with ${e} of relevant experience. Equipped with comprehensive knowledge in construction methodologies, structural systems, and project documentation to support successful infrastructure delivery.`,
+    ],
+    ome:[
+      (d,e)=>`Licensed Operations and Maintenance Engineer with a ${d} degree and ${e} of professional experience managing and maintaining complex facility and equipment systems. Adept at implementing preventive and corrective maintenance programs to ensure maximum operational uptime.`,
+      (d,e)=>`Technically skilled O&M Engineer with a ${d} background and ${e} of hands-on experience in facility operations and maintenance management. Proven ability to troubleshoot equipment failures, optimize maintenance schedules, and ensure compliance with safety regulations.`,
+      (d,e)=>`Dedicated and licensed Operations and Maintenance Engineer holding a ${d} degree and ${e} of relevant industry experience. Experienced in preventive maintenance planning, equipment diagnostics, and the coordination of maintenance activities to minimize operational disruptions.`,
+      (d,e)=>`Results-driven O&M Engineer with a ${d} degree and ${e} of progressive experience in facility management and maintenance engineering. Skilled in using CMMS platforms, analyzing equipment performance data, and implementing cost-effective maintenance strategies.`,
+      (d,e)=>`Motivated and technically proficient Operations and Maintenance Engineer with a ${d} background and ${e} of field experience. Expert in troubleshooting mechanical, electrical, and facility systems, and committed to maintaining safe and efficient operational environments.`,
+      (d,e)=>`Experienced licensed engineer with a ${d} degree and ${e} of dedicated O&M experience. Adept at managing preventive and corrective maintenance programs, training maintenance personnel, and ensuring all equipment operates at peak efficiency and safety.`,
+      (d,e)=>`Detail-oriented O&M Engineer with a ${d} degree and ${e} of professional experience. Known for a systematic approach to maintenance management, strong technical problem-solving skills, and a steadfast commitment to operational excellence.`,
+      (d,e)=>`Proactive Operations and Maintenance Engineer holding a ${d} degree and ${e} of industry experience. Combines extensive technical knowledge with strong organizational skills to manage facility systems effectively, reduce downtime, and extend equipment service life.`,
+      (d,e)=>`Skilled and licensed ${d} holder with ${e} of hands-on O&M experience. Proficient in conducting equipment inspections, implementing maintenance procedures, and coordinating with operations teams to support seamless and efficient facility performance.`,
+      (d,e)=>`Highly capable Operations and Maintenance Engineer with a ${d} degree and ${e} of relevant professional experience. Expert in managing complex maintenance systems, diagnosing technical faults, and developing solutions that enhance reliability, safety, and operational efficiency.`,
+    ],
+  }
+};
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+const pk = a=>a[Math.floor(Math.random()*a.length)];
+const gv = id=>(document.getElementById(id)?.value||'').trim();
+let sj={cover:null,resume:null};
+
+function switchTab(t,b){
+  document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');b.classList.add('active');
+}
+
+function selJob(tab,key,el){
+  sj[tab]=key;const job=JOBS[key];
+  el.closest('.job-cards').querySelectorAll('.job-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  // vacancy box
+  const vb=document.getElementById(tab==='cover'?'cv-vbox':'rv-vbox');
+  vb.innerHTML=`<div class="vb-lbl">Job Vacancy</div><div class="vb-title">${job.title}</div><div class="vb-q">${job.quals.map(q=>'• '+q).join('<br>')}</div>`;
+  vb.classList.add('on');
+  // degrees
+  const ds=document.getElementById(tab==='cover'?'cl-deg':'r-deg');
+  ds.innerHTML=job.degrees.map(d=>`<option value="${d}">${d}</option>`).join('');
+  // cert label + placeholder
+  const cl=document.getElementById(tab==='cover'?'cl-crtlbl':'r-crtlbl');
+  const ci=document.getElementById(tab==='cover'?'cl-crt':'r-crt');
+  cl.textContent=job.certLabel; ci.placeholder=pk(job.certs);
+  // exp label
+  if(tab==='cover'){
+    document.getElementById('cl-explbl').textContent=job.expLabel;
+    document.getElementById('cl-exp').placeholder=job.expPH;
+  }
+}
+
+function setLd(p,on){
+  document.getElementById(p+'-ld').classList.toggle('on',on);
+  document.getElementById(p+'-ph').style.display=on?'none':'flex';
+  document.getElementById(p+'-res').style.display='none';
+  const b=document.getElementById(p==='cl'?'cl-btn':'r-btn');
+  b.disabled=on; b.textContent=on?'⏳ Generating...':(p==='cl'?'✦ GENERATE APPLICATION LETTER':'✦ GENERATE RESUME');
+}
+
+function cpDoc(id){navigator.clipboard.writeText(document.getElementById(id).innerText).then(()=>alert('Nakopya na!'));}
+
+function prDoc(id){
+  const t=document.getElementById(id).innerText;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.8;padding:2.5cm 3cm;color:#000}pre{white-space:pre-wrap;font-family:inherit;font-size:12pt}</style></head><body><pre>${t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`);
+  w.document.close();setTimeout(()=>w.print(),300);
+}
+
+function rstOut(p){
+  document.getElementById(p+'-res').style.display='none';
+  document.getElementById(p+'-ph').style.display='flex';
+}
+
+// ═══════════════════════════════════════════════
+// API KEY MANAGEMENT
+// ═══════════════════════════════════════════════
+let APIKEY='';
+function saveApiKey(){
+  const k=document.getElementById('api-key-input').value.trim();
+  if(!k){alert('Walang nalagay na API key!');return;}
+  if(!k.startsWith('sk-ant-')){alert('Invalid format. Dapat magsimula ng "sk-ant-..."');return;}
+  APIKEY=k;
+  document.getElementById('api-dot').classList.add('connected');
+  document.getElementById('api-status-txt').innerHTML='<strong>AI Enhancement: ON</strong> — Ipo-polish ng Claude AI ang iyong letter at resume ✦';
+  document.getElementById('cl-mode-note').textContent='✦ AI Mode: Active — Claude will polish your letter into professional English';
+  document.getElementById('cl-mode-note').style.color='#4a6741';
+  document.getElementById('r-mode-note').textContent='✦ AI Mode: Active — Claude will polish your resume into professional English';
+  document.getElementById('r-mode-note').style.color='#4a6741';
+  document.getElementById('api-key-input').value='';
+}
+function clearApiKey(){
+  APIKEY='';
+  document.getElementById('api-dot').classList.remove('connected');
+  document.getElementById('api-status-txt').innerHTML='<strong>AI Enhancement:</strong> Enter your Anthropic API key to polish your letter &amp; resume with AI.';
+  document.getElementById('cl-mode-note').textContent='⚡ Mode: Template only — add API key above to enable AI polishing';
+  document.getElementById('cl-mode-note').style.color='';
+  document.getElementById('r-mode-note').textContent='⚡ Mode: Template only — add API key above to enable AI polishing';
+  document.getElementById('r-mode-note').style.color='';
+}
+async function callAI(prompt){
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':APIKEY,'anthropic-version':'2023-06-01'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})
+  });
+  const data=await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data.content[0].text;
+}
+
+// ═══════════════════════════════════════════════
+// COVER LETTER
+// ═══════════════════════════════════════════════
+async function genCL(){
+  if(!sj.cover){alert('Piliin mo muna ang Job Vacancy!');return;}
+  const name=gv('cl-name'); if(!name){alert('Lagyan mo muna ng iyong pangalan!');return;}
+  const job=JOBS[sj.cover];
+  const date=gv('cl-date')||new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const address=gv('cl-address')||'[Your Address]';
+  const contact=gv('cl-contact')||'[Contact Info]';
+  const hr=gv('cl-hr'); const sex=document.getElementById('cl-sex').value;
+  const co=gv('cl-co')||'[Company Name]'; const coa=gv('cl-coa')||'[Company Address]';
+  const src=gv('cl-src')||'your company website';
+  const deg=gv('cl-deg')||job.degrees[0];
+  const exp=gv('cl-exp')||job.expPH;
+  const ach=gv('cl-ach')||`strong ${job.title} experience and relevant technical skills`;
+  const crt=gv('cl-crt');
+  const why=gv('cl-why')||`the company's strong reputation and dedication to excellence`;
+
+  // Build salutation
+  let sal,rblock;
+  if(!hr){sal=pk(V.salutNone);rblock=`${sal.replace(':','').replace('Dear ','')}\n${co}\n${coa}`;}
+  else{
+    const last=hr.split(' ').pop();
+    if(sex==='f'){sal=`Dear Ms. ${last}:`;rblock=`Ms. ${hr}\nHuman Resource Director\n${co}\n${coa}`;}
+    else if(sex==='m'){sal=`Dear Mr. ${last}:`;rblock=`Mr. ${hr}\nHuman Resource Director\n${co}\n${coa}`;}
+    else{sal=pk(V.salutNone);rblock=`Human Resource Director\n${co}\n${coa}`;}
+  }
+
+  // Parse 3 reasons
+  const ls=ach.split('\n').filter(l=>l.trim());
+  const r1=(ls[0]||`${exp} of hands-on ${job.title} experience`).replace(/^[\d\.\-\*•]\s*/,'').trim();
+  const r2=(ls[1]||`in-depth technical knowledge from my ${deg} training`).replace(/^[\d\.\-\*•]\s*/,'').trim();
+  const r3=(ls[2]||`strong leadership, communication, and problem-solving skills`).replace(/^[\d\.\-\*•]\s*/,'').trim();
+  const crtStr=crt?pk(V.certS)(crt):'';
+
+  // Build base template letter
+  const p1=`        ${pk(V.open)(job.title,co,src)}`;
+  const p2=`        ${pk(V.q2intro)(job.title)} ${pk(V.r1)} ${r1}. ${pk(V.r2)} ${r2}. ${pk(V.r3)} ${r3}.${crtStr} ${pk(V.q2close)(co)}`;
+  const p3=`        ${pk(V.q3)(co,why)}`;
+  const p4=`        ${pk(V.q4)(co,contact)}`;
+  const sf=pk(V.signoff);
+  let letter=`${address}\n${date}\n\n${rblock}\n\n${sal}\n\n${p1}\n\n${p2}\n\n${p3}\n\n${p4}\n\n${sf}\n\n\n\n\n${name}\n${address}\n${date}`;
+
+  setLd('cl',true);
+
+  // AI polish if key is set
+  if(APIKEY){
+    try{
+      const aiPrompt=`You are an expert at writing formal Philippine application/cover letters.
+
+I have a draft cover letter. Polish and improve the language — make it more professional, eloquent, and natural — WITHOUT changing the structure or format.
+
+STRICT RULES:
+- Keep EXACT same structure: address block, date, recipient block, salutation, 4 paragraphs, sign-off, name, address, date
+- Do NOT add or remove paragraphs
+- Paragraph purposes must stay the same: (1) opening with position+source, (2) three reasons why qualified, (3) why interested in company, (4) closing with contact info
+- Make wording more professional and polished — fix grammar, improve flow
+- Do NOT invent new facts, companies, or qualifications
+- Output ONLY the polished letter — no explanations, no labels, no markdown
+
+DRAFT:
+${letter}`;
+      letter=await callAI(aiPrompt);
+    }catch(e){
+      console.warn('AI failed, using template:',e.message);
+    }
+  }
+
+  setLd('cl',false);
+  document.getElementById('cl-txt').textContent=letter;
+  document.getElementById('cl-ld').classList.remove('on');
+  document.getElementById('cl-ph').style.display='none';
+  document.getElementById('cl-res').style.display='block';
+  document.getElementById('cl-res').scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('cl-btn').disabled=false;
+  document.getElementById('cl-btn').textContent='✦ GENERATE APPLICATION LETTER';
+}
+
+// ═══════════════════════════════════════════════
+// RESUME
+// ═══════════════════════════════════════════════
+async function genRES(){
+  if(!sj.resume){alert('Piliin mo muna ang Job Vacancy!');return;}
+  const name=gv('r-name'); if(!name){alert('Lagyan mo muna ng iyong pangalan!');return;}
+  const job=JOBS[sj.resume];
+  const phone=gv('r-ph')||'N/A'; const email=gv('r-em')||'N/A';
+  const loc=gv('r-loc')||'Philippines'; const li=gv('r-li');
+  const sch=gv('r-sch')||'N/A'; const deg=gv('r-deg')||job.degrees[0];
+  const yr=gv('r-yr')||'N/A'; const gwa=gv('r-gwa');
+  const exp=gv('r-exp')||'N/A'; const crt=gv('r-crt')||'N/A';
+  const sk=gv('r-sk')||job.skills; const org=gv('r-org')||'N/A';
+  const aw=gv('r-aw')||'N/A'; const objIn=gv('r-obj');
+
+  const objective=objIn||pk(V.obj[sj.resume])(deg,'several years');
+  const ln='─────────────────────────────────────────────────────────';
+  let ch=`${phone}  |  ${email}  |  ${loc}`;
+  if(li) ch+=`\n${li}`;
+  let edu=`${sch}\n${deg}${yr!=='N/A'?'  |  Graduated: '+yr:''}`;
+  if(gwa) edu+=`\n${gwa}`;
+
+  let res=`${name.toUpperCase()}\n${ch}\n${ln}\n\nCAREER OBJECTIVE\n${ln}\n${objective}\n\nEDUCATION\n${ln}\n${edu}\n\nPROFESSIONAL EXPERIENCE\n${ln}\n${exp}\n\nCERTIFICATIONS & LICENSES\n${ln}\n${crt}\n\nSKILLS\n${ln}\n${sk}\n\nORGANIZATIONS & AFFILIATIONS\n${ln}\n${org}\n\nAWARDS & ACHIEVEMENTS\n${ln}\n${aw}`;
+
+  setLd('r',true);
+
+  // AI polish if key is set
+  if(APIKEY){
+    try{
+      const aiPrompt=`You are an expert at writing professional Philippine resumes.
+
+I have a draft resume. Polish and improve the language in each section — make bullet points more impactful, the career objective more compelling, and skills more organized — WITHOUT changing structure or facts.
+
+STRICT RULES:
+- Keep EXACT same sections and ALL CAPS headers with dash lines
+- Keep ALL the same information — do NOT invent new facts, companies, or achievements
+- Polish WORDING only — make it professional and results-oriented
+- Use strong action verbs for experience bullet points (Led, Managed, Implemented, Delivered, etc.)
+- Keep name and contact info exactly as-is at the top
+- Output ONLY the polished resume — no explanations, no markdown
+
+DRAFT:
+${res}`;
+      res=await callAI(aiPrompt);
+    }catch(e){
+      console.warn('AI failed, using template:',e.message);
+    }
+  }
+
+  setLd('r',false);
+  document.getElementById('r-txt').textContent=res;
+  document.getElementById('r-ld').classList.remove('on');
+  document.getElementById('r-ph').style.display='none';
+  document.getElementById('r-res').style.display='block';
+  document.getElementById('r-res').scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('r-btn').disabled=false;
+  document.getElementById('r-btn').textContent='✦ GENERATE RESUME';
+}
+
+document.getElementById('cl-date').value=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+</script>
+</body>
+</html>
